@@ -1,0 +1,61 @@
+name: Deploy Lambda
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (dev, staging, prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      artifacts_bucket_suffix:
+        description: 'S3 bucket suffix if default exists (e.g. -v2)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  AWS_REGION: eu-north-1
+  # Override in repo Settings > Secrets and variables > Variables if your bucket uses a suffix (e.g. -v2)
+  ARTIFACTS_BUCKET_SUFFIX: ${{ vars.ARTIFACTS_BUCKET_SUFFIX || '' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Lambda
+        run: npm run build
+
+      - name: Deploy Lambda
+        run: |
+          zip -r lambda.zip dist node_modules package.json
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          SUFFIX="${{ github.event.inputs.artifacts_bucket_suffix || env.ARTIFACTS_BUCKET_SUFFIX }}"
+          BUCKET="${ENV}-mobile-api-artifacts${SUFFIX}"
+          aws s3 cp lambda.zip s3://${BUCKET}/lambda.zip
+          aws lambda update-function-code \
+            --function-name ${ENV}-mobile-api \
+            --s3-bucket ${BUCKET} \
+            --s3-key lambda.zip

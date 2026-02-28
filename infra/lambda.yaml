@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda stack for mobile API (Express app on Lambda)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+
+Resources:
+  MobileApiLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: mobile-api-lambda-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-users
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-companies
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-cards
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-transactions
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-invoices
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-cards/index/*
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-transactions/index/*
+                  - !Sub arn:aws:dynamodb:*:*:table/${Environment}-invoices/index/*
+
+  MobileApiLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-mobile-api'
+      Runtime: nodejs20.x
+      Handler: dist/lambda.handler
+      Role: !GetAtt MobileApiLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 512
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+      Code:
+        S3Bucket: !ImportValue
+          Fn::Sub: '${Environment}-mobile-api-artifacts-bucket'
+        S3Key: 'lambda.zip'
+
+Outputs:
+  MobileApiLambdaArn:
+    Description: Lambda function ARN
+    Value: !GetAtt MobileApiLambdaFunction.Arn
+    Export:
+      Name: !Sub '${Environment}-mobile-api-lambda-arn'
+
+

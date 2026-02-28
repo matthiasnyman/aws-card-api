@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 bucket for mobile API deployment artifacts'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+  ArtifactsBucketSuffix:
+    Type: String
+    Default: ''
+    Description: Suffix for bucket name if dev-mobile-api-artifacts already exists (e.g. -v2)
+
+Resources:
+  MobileApiArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${Environment}-mobile-api-artifacts${ArtifactsBucketSuffix}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: mobile-api
+
+  ArtifactsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MobileApiArtifactsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnforceTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub '${MobileApiArtifactsBucket.Arn}'
+              - !Sub '${MobileApiArtifactsBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+
+Outputs:
+  ArtifactsBucketName:
+    Description: Artifacts bucket name
+    Value: !Ref MobileApiArtifactsBucket
+    Export:
+      Name: !Sub '${Environment}-mobile-api-artifacts-bucket'
+
+

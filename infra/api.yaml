@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HTTP API Gateway for mobile API'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+
+Resources:
+  MobileHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${Environment}-mobile-http-api'
+      ProtocolType: HTTP
+
+  MobileHttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref MobileHttpApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  MobileApiLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MobileHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub:
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn:
+              Fn::ImportValue: !Sub '${Environment}-mobile-api-lambda-arn'
+      PayloadFormatVersion: '2.0'
+
+  MobileApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MobileHttpApi
+      RouteKey: 'ANY /{proxy+}'
+      Target: !Sub integrations/${MobileApiLambdaIntegration}
+
+  MobileApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::ImportValue: !Sub '${Environment}-mobile-api-lambda-arn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MobileHttpApi}/*
+
+Outputs:
+  HttpApiId:
+    Description: HTTP API ID
+    Value: !Ref MobileHttpApi
+    Export:
+      Name: !Sub '${Environment}-mobile-http-api-id'
+
+

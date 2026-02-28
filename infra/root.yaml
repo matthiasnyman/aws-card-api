@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Root stack for mobile API infrastructure'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+  ArtifactsBucketSuffix:
+    Type: String
+    Default: ''
+    Description: Suffix for artifacts bucket if dev-mobile-api-artifacts exists (e.g. -v2)
+  TemplatesBucket:
+    Type: String
+    Default: dev-mobile-api-templates
+    Description: S3 bucket containing nested stack templates
+
+Resources:
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplatesBucket}.s3.${AWS::Region}.amazonaws.com/database.yaml'
+      Parameters:
+        Environment: !Ref Environment
+
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplatesBucket}.s3.${AWS::Region}.amazonaws.com/s3.yaml'
+      Parameters:
+        Environment: !Ref Environment
+        ArtifactsBucketSuffix: !Ref ArtifactsBucketSuffix
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: S3Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplatesBucket}.s3.${AWS::Region}.amazonaws.com/lambda.yaml'
+      Parameters:
+        Environment: !Ref Environment
+
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplatesBucket}.s3.${AWS::Region}.amazonaws.com/api.yaml'
+      Parameters:
+        Environment: !Ref Environment
