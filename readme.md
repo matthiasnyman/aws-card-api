@@ -38,6 +38,10 @@
    ENVIRONMENT=dev AWS_REGION=eu-north-1 npm run seed
    ```
 
+### Next steps
+
+- Configure authentication (for example using AWS Cognito) and set `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` for the Lambda/API. Until this is done, the `/api` endpoints run without enforced authentication.
+
 ### Resetting the environment
 
 If you need to tear down and redeploy (e.g. after changing stack names or resources), delete the root stack and any leftover DynamoDB tables:
