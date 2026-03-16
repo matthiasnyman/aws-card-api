@@ -25,6 +25,7 @@
    ```bash
    aws cloudformation deploy --stack-name dev-mobile-api-lambda --template-file infra/lambda.yaml --parameter-overrides Environment=dev --capabilities CAPABILITY_NAMED_IAM
    ```
+   Note: the template uses `nodejs24.x`. The Lambda handler is implemented as a promise-based async handler (no callback) to be compatible with Node.js 24.
 
 5. **API Gateway**
    ```bash

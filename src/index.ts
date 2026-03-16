@@ -25,8 +25,8 @@ app.get('/health', (_req, res) => {
 // 1) Companies list
 app.get('/api/companies', async (_req, res) => {
   try {
-    const items = await listCompanies();
-    res.json({ items });
+    const { items, nextCursor } = await listCompanies();
+    res.json({ items, nextCursor });
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -76,7 +76,20 @@ app.get('/api/cards/:cardId/transactions', async (req, res) => {
       limit,
       cursor
     );
-    res.json({ items, nextCursor });
+    const dtoItems = items.map((t: any) => ({
+      id: t.id,
+      cardId: t.cardId,
+      createdAt:
+        typeof t.createdAt === 'number'
+          ? new Date(t.createdAt * 1000).toISOString()
+          : t.createdAt,
+      merchant: t.merchant,
+      description: t.description,
+      amount: t.amount,
+      currency: t.currency,
+      category: t.category,
+    }));
+    res.json({ items: dtoItems, nextCursor });
   } catch (err) {
     console.error(err);
     res.status(500).json({

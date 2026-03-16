@@ -20,11 +20,6 @@ These endpoints provide the context required to populate the company selector an
 
 Returns the list of companies that the authenticated user can access (for the top dropdown).
 
-**Query parameters**
-
-- **`limit`** (optional, default `50`): Maximum number of companies to return.
-- **`cursor`** (optional): Pagination cursor for fetching more companies.
-
 **Response 200**
 
 ```json
@@ -39,7 +34,7 @@ Returns the list of companies that the authenticated user can access (for the to
 }
 ```
 
-Backed by the `companies` table in DynamoDB (`${env}-companies`).
+Backed by the `companies` table in DynamoDB (`${env}-companies`), with a default page size of 50.
 
 ---
 
@@ -280,4 +275,7 @@ All non‑2xx responses follow a consistent error envelope:
 
 This keeps frontend error handling predictable and easy to extend.
 
+Internally, DynamoDB stores `transactions.createdAt` as a numeric unix timestamp
+for efficient range queries; the API layer converts it to an ISO‑8601 string as
+shown in the examples above so the frontend always deals with a consistent type.
 

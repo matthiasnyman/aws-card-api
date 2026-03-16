@@ -54,7 +54,7 @@ import {
       ? {
           id: invoiceDb.id,
           status: mapInvoiceStatus(invoiceDb.status),
-          dueDate: invoiceDb.dueDate, // store as ISO date string in Dynamo
+          dueDate: invoiceDb.dueDate,
           amountDue: invoiceDb.amountDue,
           currency: invoiceDb.currency,
         }
@@ -75,7 +75,7 @@ import {
       items: txnDbItems.map((t: any) => ({
         id: t.id,
         cardId: t.cardId,
-        createdAt: t.createdAt, // store as ISO string in Dynamo
+        createdAt: t.createdAt,
         merchant: t.merchant,
         description: t.description,
         amount: t.amount,

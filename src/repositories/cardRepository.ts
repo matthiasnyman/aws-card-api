@@ -44,14 +44,22 @@ export async function listCompanies() {
   const result = await docClient.send(
     new ScanCommand({
       TableName: COMPANIES_TABLE,
-      // For the assignment we ignore pagination; Scan is acceptable for small demo data.
       ProjectionExpression: 'id, #name',
       ExpressionAttributeNames: {
         '#name': 'name',
       },
+      Limit: 50,
     })
   );
-  return result.Items ?? [];
+
+  const nextCursor = result.LastEvaluatedKey
+    ? Buffer.from(JSON.stringify(result.LastEvaluatedKey), 'utf8').toString('base64')
+    : null;
+
+  return {
+    items: result.Items ?? [],
+    nextCursor,
+  };
 }
 
 export async function activateCard(cardId: string) {
