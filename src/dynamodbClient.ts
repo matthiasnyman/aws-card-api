@@ -8,7 +8,7 @@ const region = process.env.AWS_REGION || 'eu-north-1';
 
 export const dynamoClient = new DynamoDBClient({
   region,
-  endpoint: process.env.DYNAMODB_ENDPOINT, // optional: for local DynamoDB
+  endpoint: process.env.DYNAMODB_ENDPOINT, 
 });
 
 export const docClient = DynamoDBDocumentClient.from(dynamoClient, {

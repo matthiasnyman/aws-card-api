@@ -14,10 +14,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// protect everything under /api
 app.use('/api', authMiddleware);
 
-// all your existing /api/... routes follow unchanged
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
