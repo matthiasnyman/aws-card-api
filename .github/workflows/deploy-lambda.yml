@@ -20,7 +20,6 @@ on:
 
 env:
   AWS_REGION: eu-north-1
-  # Override in repo Settings > Secrets and variables > Variables if your bucket uses a suffix (e.g. -v2)
   ARTIFACTS_BUCKET_SUFFIX: ${{ vars.ARTIFACTS_BUCKET_SUFFIX || '' }}
 
 jobs:
